@@ -132,3 +132,5 @@ outputs/
 .idea/
 mlruns/
 GenerativeModels/
+datasets/
+runs/

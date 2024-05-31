@@ -58,7 +58,7 @@ def main(args):
     set_determinism(seed=args.seed)
     print_config()
 
-    output_dir = Path("/project/outputs/runs/")
+    output_dir = Path("runs/")
     output_dir.mkdir(exist_ok=True, parents=True)
 
     run_dir = output_dir / args.run_dir

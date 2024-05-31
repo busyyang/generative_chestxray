@@ -22,12 +22,11 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
-    parser.add_argument("--run_dir", help="Location of model to resume.")
-    parser.add_argument("--training_ids", help="Location of file with training ids.")
-    parser.add_argument("--validation_ids", help="Location of file with validation ids.")
-    parser.add_argument("--config_file", help="Location of file with validation ids.")
-    parser.add_argument("--batch_size", type=int, default=256, help="Training batch size.")
-    parser.add_argument("--n_epochs", type=int, default=25, help="Number of epochs to train.")
+    parser.add_argument("--run_dir", default="AE_KL", help="Location of model to resume.")
+    parser.add_argument("--dataset_path", default='datasets/iu_xray', help="Location of dataset")
+    parser.add_argument("--config_file",default='configs/stage1/aekl_v0.yaml', help="Location of file with validation ids.")
+    parser.add_argument("--batch_size", type=int, default=1, help="Training batch size.")
+    parser.add_argument("--n_epochs", type=int, default=1, help="Number of epochs to train.")
     parser.add_argument("--adv_start", type=int, default=25, help="Epoch when the adversarial training starts.")
     parser.add_argument("--eval_freq", type=int, default=10, help="Number of epochs to between evaluations.")
     parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
@@ -41,7 +40,7 @@ def main(args):
     set_determinism(seed=args.seed)
     print_config()
 
-    output_dir = Path("/project/outputs/runs/")
+    output_dir = Path("runs/")
     output_dir.mkdir(exist_ok=True, parents=True)
 
     run_dir = output_dir / args.run_dir
@@ -66,8 +65,7 @@ def main(args):
     train_loader, val_loader = get_dataloader(
         cache_dir=cache_dir,
         batch_size=args.batch_size,
-        training_ids=args.training_ids,
-        validation_ids=args.validation_ids,
+        dataset_path=args.dataset_path,
         num_workers=args.num_workers,
         model_type="autoencoder",
     )

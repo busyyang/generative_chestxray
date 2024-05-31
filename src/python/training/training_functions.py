@@ -63,13 +63,14 @@ def train_aekl(
         perceptual_loss=perceptual_loss,
         loader=val_loader,
         device=device,
-        step=len(train_loader) * start_epoch,
+        step=start_epoch,
         writer=writer_val,
         kl_weight=kl_weight,
         adv_weight=adv_weight if start_epoch >= adv_start else 0.0,
         perceptual_weight=perceptual_weight,
     )
     print(f"epoch {start_epoch} val loss: {val_loss:.4f}")
+
     for epoch in range(start_epoch, n_epochs):
         train_epoch_aekl(
             model=model,
@@ -95,7 +96,7 @@ def train_aekl(
                 perceptual_loss=perceptual_loss,
                 loader=val_loader,
                 device=device,
-                step=len(train_loader) * epoch,
+                step=epoch,
                 writer=writer_val,
                 kl_weight=kl_weight,
                 adv_weight=adv_weight if epoch >= adv_start else 0.0,
@@ -147,7 +148,7 @@ def train_epoch_aekl(
 
     adv_loss = PatchAdversarialLoss(criterion="least_squares", no_activation_leastsq=True)
 
-    pbar = tqdm(enumerate(loader), total=len(loader))
+    pbar = tqdm(enumerate(loader), total=len(loader), desc=f'Training Epoch {epoch + 1}')
     for step, x in pbar:
         images = x["image"].to(device)
 
@@ -213,23 +214,21 @@ def train_epoch_aekl(
 
         losses["d_loss"] = discriminator_loss
 
-        writer.add_scalar("lr_g", get_lr(optimizer_g), epoch * len(loader) + step)
-        writer.add_scalar("lr_d", get_lr(optimizer_d), epoch * len(loader) + step)
-        for k, v in losses.items():
-            writer.add_scalar(f"{k}", v.item(), epoch * len(loader) + step)
-
         pbar.set_postfix(
             {
-                "epoch": epoch,
-                "loss": f"{losses['loss'].item():.6f}",
-                "l1_loss": f"{losses['l1_loss'].item():.6f}",
-                "p_loss": f"{losses['p_loss'].item():.6f}",
-                "g_loss": f"{losses['g_loss'].item():.6f}",
-                "d_loss": f"{losses['d_loss'].item():.6f}",
-                "lr_g": f"{get_lr(optimizer_g):.6f}",
-                "lr_d": f"{get_lr(optimizer_d):.6f}",
+                "loss": f"{losses['loss'].item():.4f}",
+                "l1_loss": f"{losses['l1_loss'].item():.4f}",
+                "p_loss": f"{losses['p_loss'].item():.4f}",
+                "g_loss": f"{losses['g_loss'].item():.4f}",
+                "d_loss": f"{losses['d_loss'].item():.4f}",
+                "lr_g": f"{get_lr(optimizer_g):.4f}",
+                "lr_d": f"{get_lr(optimizer_d):.4f}",
             },
         )
+    writer.add_scalar("lr_g", get_lr(optimizer_g), epoch)
+    writer.add_scalar("lr_d", get_lr(optimizer_d), epoch)
+    for k, v in losses.items():
+        writer.add_scalar(f"{k}", v.item(), epoch)
 
 
 @torch.no_grad()
@@ -250,7 +249,8 @@ def eval_aekl(
 
     adv_loss = PatchAdversarialLoss(criterion="least_squares", no_activation_leastsq=True)
     total_losses = OrderedDict()
-    for x in loader:
+    pbar = tqdm(loader, total=len(loader), desc=f'Validation {step}')
+    for x in pbar:
         images = x["image"].to(device)
 
         with autocast(enabled=True):
@@ -297,6 +297,17 @@ def eval_aekl(
 
         for k, v in losses.items():
             total_losses[k] = total_losses.get(k, 0) + v.item() * images.shape[0]
+        
+        pbar.set_postfix(
+            {
+                "loss": f"{losses['loss'].item():.4f}",
+                "l1_loss": f"{losses['l1_loss'].item():.4f}",
+                "p_loss": f"{losses['p_loss'].item():.4f}",
+                "g_loss": f"{losses['g_loss'].item():.4f}",
+                "d_loss": f"{losses['d_loss'].item():.4f}",
+            }
+        )
+
 
     for k in total_losses.keys():
         total_losses[k] /= len(loader.dataset)

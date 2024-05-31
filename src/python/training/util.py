@@ -17,7 +17,27 @@ from omegaconf.dictconfig import DictConfig
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import json,os
 
+
+def get_iu_datalist(dataset_path:str):
+    with open(os.path.join(dataset_path, 'annotation.json'), "r") as f:
+        data = json.load(f)
+    train_data = []
+    val_data = []
+    for t in data['train']:
+        train_data.append({
+            'image': os.path.join(dataset_path, 'images', t['image_path'][0]),
+            'report': [t['report']]
+        })
+    
+    for t in data['val']:
+        val_data.append({
+            'image': os.path.join(dataset_path, 'images', t['image_path'][0]),
+            'report': [t['report']]
+        })
+    
+    return train_data, val_data
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LOADING
@@ -48,11 +68,9 @@ def get_datalist(
 def get_dataloader(
     cache_dir: Union[str, Path],
     batch_size: int,
-    training_ids: str,
-    validation_ids: str,
+    dataset_path: str,
     num_workers: int = 8,
-    model_type: str = "autoencoder",
-    extended_report: bool = False,
+    model_type: str = "autoencoder"
 ):
     # Define transformations
     val_transforms = transforms.Compose(
@@ -65,14 +83,23 @@ def get_dataloader(
                     None,
                 ],
             ),
+            transforms.Resized(keys=["image"], spatial_size=(512, 512)),
             transforms.Rotate90d(keys=["image"], k=-1, spatial_axes=(0, 1)),  # Fix flipped image read
             transforms.Flipd(keys=["image"], spatial_axis=1),  # Fix flipped image read
             transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
-            transforms.CenterSpatialCropd(keys=["image"], roi_size=(512, 512)),
+            #transforms.CenterSpatialCropd(keys=["image"], roi_size=(512, 512)),
+            transforms.RandAffined(
+                    keys=["image"],
+                    rotate_range=(0, 0),
+                    translate_range=(-0, 0),
+                    scale_range=(0, 0),
+                    spatial_size=[512, 512],
+                    prob=1,
+                ),
             transforms.ToTensord(keys=["image"]),
-            LoadJSONd(keys=["report"]),
-            RandomSelectExcerptd(keys=["report"], sentence_key="sentences", max_n_sentences=5),
-            ApplyTokenizerd(keys=["report"]),
+            #LoadJSONd(keys=["report"]),
+            #RandomSelectExcerptd(keys=["report"], sentence_key="sentences", max_n_sentences=5),
+            ApplyTokenizerd(keys=["report"])
         ]
     )
     if model_type == "autoencoder":
@@ -86,12 +113,13 @@ def get_dataloader(
                         None,
                     ],
                 ),
+                transforms.Resized(keys=["image"], spatial_size=(512, 512)),
                 transforms.Rotate90d(keys=["image"], k=-1, spatial_axes=(0, 1)),  # Fix flipped image read
                 transforms.Flipd(keys=["image"], spatial_axis=1),  # Fix flipped image read
                 transforms.ScaleIntensityRanged(
                     keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True
                 ),
-                transforms.CenterSpatialCropd(keys=["image"], roi_size=(512, 512)),
+                #transforms.CenterSpatialCropd(keys=["image"], roi_size=(512, 512)),
                 transforms.RandAffined(
                     keys=["image"],
                     rotate_range=(-np.pi / 36, np.pi / 36),
@@ -102,9 +130,9 @@ def get_dataloader(
                 ),
                 transforms.RandFlipd(keys=["image"], spatial_axis=1, prob=0.5),
                 transforms.ToTensord(keys=["image"]),
-                LoadJSONd(keys=["report"]),
-                RandomSelectExcerptd(keys=["report"], sentence_key="sentences", max_n_sentences=5),
-                ApplyTokenizerd(keys=["report"]),
+                #LoadJSONd(keys=["report"]),
+                #RandomSelectExcerptd(keys=["report"], sentence_key="sentences", max_n_sentences=5),
+                ApplyTokenizerd(keys=["report"])
             ]
         )
     if model_type == "diffusion":
@@ -118,6 +146,7 @@ def get_dataloader(
                         None,
                     ],
                 ),
+                transforms.Resized(keys=["image"], spatial_size=(512, 512)),
                 transforms.Rotate90d(keys=["image"], k=-1, spatial_axes=(0, 1)),  # Fix flipped image read
                 transforms.Flipd(keys=["image"], spatial_axis=1),  # Fix flipped image read
                 transforms.ScaleIntensityRanged(
@@ -133,8 +162,8 @@ def get_dataloader(
                     prob=0.10,
                 ),
                 transforms.ToTensord(keys=["image"]),
-                LoadJSONd(keys=["report"]),
-                RandomSelectExcerptd(keys=["report"], sentence_key="sentences", max_n_sentences=5),
+                #LoadJSONd(keys=["report"]),
+                #RandomSelectExcerptd(keys=["report"], sentence_key="sentences", max_n_sentences=5),
                 ApplyTokenizerd(keys=["report"]),
                 transforms.RandLambdad(
                     keys=["report"],
@@ -146,7 +175,7 @@ def get_dataloader(
             ]
         )
 
-    train_dicts = get_datalist(ids_path=training_ids, extended_report=extended_report)
+    train_dicts,val_dicts = get_iu_datalist(dataset_path)
     train_ds = PersistentDataset(data=train_dicts, transform=train_transforms, cache_dir=str(cache_dir))
     train_loader = DataLoader(
         train_ds,
@@ -158,7 +187,7 @@ def get_dataloader(
         persistent_workers=True,
     )
 
-    val_dicts = get_datalist(ids_path=validation_ids, extended_report=extended_report)
+    # val_dicts = get_datalist(ids_path=validation_ids, extended_report=extended_report)
     val_ds = PersistentDataset(data=val_dicts, transform=val_transforms, cache_dir=str(cache_dir))
     val_loader = DataLoader(
         val_ds,
@@ -217,18 +246,22 @@ def get_figure(
 ):
     img_npy_0 = np.clip(a=img[0, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
     recons_npy_0 = np.clip(a=recons[0, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
-    img_npy_1 = np.clip(a=img[1, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
-    recons_npy_1 = np.clip(a=recons[1, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
 
-    img_row_0 = np.concatenate(
-        (
-            img_npy_0,
-            recons_npy_0,
-            img_npy_1,
-            recons_npy_1,
-        ),
-        axis=1,
-    )
+    if img.shape[0] == 1:
+        img_row_0 = np.concatenate((img_npy_0, recons_npy_0), axis=1)
+    else:
+        img_npy_1 = np.clip(a=img[1, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
+        recons_npy_1 = np.clip(a=recons[1, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
+        
+        img_row_0 = np.concatenate(
+            (
+                img_npy_0,
+                recons_npy_0,
+                img_npy_1,
+                recons_npy_1,
+            ),
+            axis=1,
+        )
 
     fig = plt.figure(dpi=300)
     plt.imshow(img_row_0, cmap="gray")
