@@ -52,10 +52,7 @@ def main(args):
         img = batch["image"]
         for batch2 in test_loader_2:
             img2 = batch2["image"]
-            #if batch["image_meta_dict"]["filename_or_obj"][0] == batch2["image_meta_dict"]["filename_or_obj"][0]:
-            #    continue
             ms_ssim_list.append(ms_ssim(img.to(device), img2.to(device)).item())
-        #pbar.update()
 
     ms_ssim_list = np.array(ms_ssim_list)
     print(f"Mean MS-SSIM: {ms_ssim_list.mean():.6f}")

@@ -70,13 +70,13 @@ def main(args):
     )
     samples_loader = DataLoader(
         samples_ds,
-        batch_size=16,
+        batch_size=1,
         shuffle=False,
         num_workers=8,
     )
 
     samples_features = []
-    for batch in tqdm(samples_loader):
+    for batch in tqdm(samples_loader, desc='Get Features'):
         img = batch["image"]
         with torch.no_grad():
             outputs = model.features(img.to(device))
@@ -94,7 +94,7 @@ def main(args):
     )
 
     test_features = []
-    for batch in tqdm(test_loader):
+    for batch in tqdm(test_loader, desc='Get Features'):
         img = batch["image"]
         with torch.no_grad():
             outputs = model.features(img.to(device))
