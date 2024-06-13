@@ -21,7 +21,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
-    parser.add_argument("--sample_dir", help="Location of the samples to evaluate.")
+    parser.add_argument("--sample_dir", default='sampled_images/', type=str, help="Location of the samples to evaluate.")
     parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
 
     args = parser.parse_args()
@@ -86,8 +86,8 @@ def main(args):
         img = batch["image"]
         for batch2 in eval_loader_2:
             img2 = batch2["image"]
-            if batch["image_meta_dict"]["filename_or_obj"][0] == batch2["image_meta_dict"]["filename_or_obj"][0]:
-                continue
+            #if batch["image_meta_dict"]["filename_or_obj"][0] == batch2["image_meta_dict"]["filename_or_obj"][0]:
+            #    continue
             ms_ssim_list.append(ms_ssim(img.to(device), img2.to(device)).item())
         pbar.update()
 

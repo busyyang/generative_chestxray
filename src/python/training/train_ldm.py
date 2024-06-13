@@ -25,7 +25,7 @@ def parse_args():
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--run_dir", default="LDM", help="Location of model to resume.")
-    parser.add_argument("--dataset_path",default='datasets/iu_xray', help="Location of file with training ids.")
+    parser.add_argument("--dataset_path",default='datasets/iu_xray', help="Location of training set.")
     parser.add_argument("--config_file",default='configs/ldm/ldm_v0.yaml', help="Location of file with validation ids.")
     parser.add_argument("--stage1_uri",default='mlruns/562843978384092940/efbdf48bf27242bc8bc9e8fc4301ce7c/artifacts/final_model', help="Path readable by load_model.")
     parser.add_argument("--scale_factor", type=float, default=0.3, help="signal-to-noise ratio.")

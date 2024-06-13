@@ -8,6 +8,6 @@ gdown
 x-transformers==1.8.1
 spacy
 transformers
-torchxrayvision==1.0.1
+torchxrayvision==1.2.3
 torch==1.13.1
 monai-generative

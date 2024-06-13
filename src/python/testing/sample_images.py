@@ -28,12 +28,12 @@ def parse_args():
     parser.add_argument("--diffusion_config_file_path", default='configs/ldm/ldm_v0.yaml', help="Path to the .yaml for the diffusion model.")
     parser.add_argument("--start_seed", default=1, type=int, help="random seed for the generation of the images.")
     parser.add_argument("--stop_seed", default=100, type=int, help="random seed for the generation of the images.")
-    parser.add_argument("--prompt", default='Cardiac and mediastinal contours are within normal limits. The lungs are clear. Bony structures are intact.', type=str, help="prompt text.")
+    parser.add_argument("--prompt", default='Cardiac and mediastinal contours are within normal limits', type=str, help="prompt text.")
     parser.add_argument("--guidance_scale", type=float, default=7.0, help="")
     parser.add_argument("--x_size", type=int, default=64, help="Latent space x size.")
     parser.add_argument("--y_size", type=int, default=64, help="Latent space y size.")
     parser.add_argument("--scale_factor", default=0.3, type=float, help="signal-to-noise ratio. Should be keep with training precess.")
-    parser.add_argument("--num_inference_steps", type=int, help="time steps for the diffusion model in inference time. It could be different from the training time steps.")
+    parser.add_argument("--num_inference_steps", type=int, default=50, help="time steps for the diffusion model in DDIM.")
 
     args = parser.parse_args()
     return args

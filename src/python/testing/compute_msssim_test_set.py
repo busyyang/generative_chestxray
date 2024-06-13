@@ -18,7 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
-    parser.add_argument("--test_ids", help="Location of file with test ids.")
+    parser.add_argument("--dataset_path",default='datasets/iu_xray', help="Location of traing dataset.")
     parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
 
     args = parser.parse_args()
@@ -32,16 +32,14 @@ def main(args):
     print("Getting data...")
     test_loader = get_test_dataloader(
         batch_size=1,
-        test_ids=args.test_ids,
-        num_workers=args.num_workers,
-        upper_limit=1000,
+        dataset_path=args.dataset_path,
+        num_workers=args.num_workers
     )
 
     test_loader_2 = get_test_dataloader(
         batch_size=1,
-        test_ids=args.test_ids,
-        num_workers=args.num_workers,
-        upper_limit=1000,
+        dataset_path=args.dataset_path,
+        num_workers=args.num_workers
     )
 
     device = torch.device("cuda")
@@ -54,10 +52,10 @@ def main(args):
         img = batch["image"]
         for batch2 in test_loader_2:
             img2 = batch2["image"]
-            if batch["image_meta_dict"]["filename_or_obj"][0] == batch2["image_meta_dict"]["filename_or_obj"][0]:
-                continue
+            #if batch["image_meta_dict"]["filename_or_obj"][0] == batch2["image_meta_dict"]["filename_or_obj"][0]:
+            #    continue
             ms_ssim_list.append(ms_ssim(img.to(device), img2.to(device)).item())
-        pbar.update()
+        #pbar.update()
 
     ms_ssim_list = np.array(ms_ssim_list)
     print(f"Mean MS-SSIM: {ms_ssim_list.mean():.6f}")

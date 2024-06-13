@@ -23,9 +23,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
-    parser.add_argument("--sample_dir", help="Location of the samples to evaluate.")
-    parser.add_argument("--test_ids", help="Location of file with test ids.")
-    parser.add_argument("--batch_size", type=int, default=256, help="Batch size.")
+    parser.add_argument("--sample_dir", default='sampled_images/', help="Location of the samples to evaluate.")
+    parser.add_argument("--dataset_path",default='datasets/iu_xray/', help="Location of dataset.")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size.")
     parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
 
     args = parser.parse_args()
@@ -88,7 +88,7 @@ def main(args):
     # Test set
     test_loader = get_test_dataloader(
         batch_size=1,
-        test_ids=args.test_ids,
+        dataset_path=args.dataset_path,
         num_workers=args.num_workers,
         upper_limit=1000,
     )
