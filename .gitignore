@@ -134,3 +134,4 @@ mlruns/
 GenerativeModels/
 datasets/
 runs/
+sampled_images/

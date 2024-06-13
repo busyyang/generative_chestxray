@@ -18,6 +18,7 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import json,os
+from datetime import datetime 
 
 
 def get_iu_datalist(dataset_path:str):
@@ -225,6 +226,7 @@ def log_mlflow(
     print(f"Setting mlflow experiment: {experiment}")
     mlflow.set_experiment(experiment)
 
+
     with start_run():
         print(f"MLFLOW URI: {mlflow.tracking.get_tracking_uri()}")
         print(f"MLFLOW ARTIFACT URI: {mlflow.get_artifact_uri()}")
@@ -244,27 +246,17 @@ def get_figure(
     img: torch.Tensor,
     recons: torch.Tensor,
 ):
-    img_npy_0 = np.clip(a=img[0, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
-    recons_npy_0 = np.clip(a=recons[0, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
-
-    if img.shape[0] == 1:
-        img_row_0 = np.concatenate((img_npy_0, recons_npy_0), axis=1)
-    else:
-        img_npy_1 = np.clip(a=img[1, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
-        recons_npy_1 = np.clip(a=recons[1, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
-        
-        img_row_0 = np.concatenate(
-            (
-                img_npy_0,
-                recons_npy_0,
-                img_npy_1,
-                recons_npy_1,
-            ),
-            axis=1,
-        )
+    
+    pairs = []
+    for i in range(img.shape[0]):
+        input_ = np.clip(a=img[i, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
+        recon_ = np.clip(a=recons[i, 0, :, :].cpu().numpy(), a_min=0, a_max=1)
+        pairs.append(np.concatenate((input_, recon_), axis=0))
+    
+    f = np.concatenate(pairs, axis=1)
 
     fig = plt.figure(dpi=300)
-    plt.imshow(img_row_0, cmap="gray")
+    plt.imshow(f, cmap="gray")
     plt.axis("off")
     return fig
 
@@ -274,12 +266,13 @@ def log_reconstructions(
     reconstruction: torch.Tensor,
     writer: SummaryWriter,
     step: int,
-    title: str = "RECONSTRUCTION",
+    title: str = "RECONSTRUCTION"
 ) -> None:
     fig = get_figure(
         image,
         reconstruction,
     )
+    fig.savefig(os.path.join(writer.logdir, f"{title}_{step}.png"), bbox_inches="tight")
     writer.add_figure(title, fig, step)
 
 
@@ -298,11 +291,11 @@ def log_ldm_sample_unconditioned(
     latent = torch.randn((1,) + spatial_shape)
     latent = latent.to(device)
 
-    prompt_embeds = torch.cat((49406 * torch.ones(1, 1), 49407 * torch.ones(1, 76)), 1).long()
+    prompt_embeds = torch.cat((49406 * torch.ones(1, 1), 49407 * torch.ones(1, 76)), 1).long().to(device)
     prompt_embeds = text_encoder(prompt_embeds.squeeze(1))
     prompt_embeds = prompt_embeds[0]
 
-    for t in tqdm(scheduler.timesteps, ncols=70):
+    for t in tqdm(scheduler.timesteps, ncols=70,desc='Sample Image:'):
         noise_pred = model(x=latent, timesteps=torch.asarray((t,)).to(device), context=prompt_embeds)
         latent, _ = scheduler.step(noise_pred, t, latent)
 
@@ -312,3 +305,11 @@ def log_ldm_sample_unconditioned(
     plt.imshow(img_0, cmap="gray")
     plt.axis("off")
     writer.add_figure("SAMPLE", fig, step)
+  
+def generate_folder_from_current_time(prefix:str=''):  
+    current_time = datetime.now()   
+    formatted_time = current_time.strftime('%Y-%m-%d_%H-%M-%S')  
+    folder_path = os.path.join(prefix, formatted_time)
+    if not os.path.exists(folder_path):  
+        os.makedirs(folder_path)
+    return folder_path

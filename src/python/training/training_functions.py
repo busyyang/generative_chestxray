@@ -356,7 +356,7 @@ def train_ldm(
         text_encoder=text_encoder,
         loader=val_loader,
         device=device,
-        step=len(train_loader) * start_epoch,
+        step=start_epoch,
         writer=writer_val,
         sample=False,
         scale_factor=scale_factor,
@@ -386,7 +386,7 @@ def train_ldm(
                 text_encoder=text_encoder,
                 loader=val_loader,
                 device=device,
-                step=len(train_loader) * epoch,
+                step=epoch,
                 writer=writer_val,
                 sample=True if (epoch + 1) % (eval_freq * 2) == 0 else False,
                 scale_factor=scale_factor,
@@ -488,19 +488,20 @@ def eval_ldm(
     raw_model = model.module if hasattr(model, "module") else model
     total_losses = OrderedDict()
 
-    for x in loader:
+    pbar = tqdm(loader, total=len(loader), desc=f'Validation {step}')
+    for x in pbar:
         images = x["image"].to(device)
         reports = x["report"].to(device)
         timesteps = torch.randint(0, scheduler.num_train_timesteps, (images.shape[0],), device=device).long()
 
         with autocast(enabled=True):
             e = stage1(images) * scale_factor
+            noise = torch.randn_like(e).to(device)
+            noisy_e = scheduler.add_noise(original_samples=e, noise=noise, timesteps=timesteps)
 
             prompt_embeds = text_encoder(reports.squeeze(1))
             prompt_embeds = prompt_embeds[0]
 
-            noise = torch.randn_like(e).to(device)
-            noisy_e = scheduler.add_noise(original_samples=e, noise=noise, timesteps=timesteps)
             noise_pred = model(x=noisy_e, timesteps=timesteps, context=prompt_embeds)
 
             if scheduler.prediction_type == "v_prediction":

@@ -24,18 +24,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
-    parser.add_argument("--run_dir", help="Location of model to resume.")
-    parser.add_argument("--training_ids", help="Location of file with training ids.")
-    parser.add_argument("--validation_ids", help="Location of file with validation ids.")
-    parser.add_argument("--config_file", help="Location of file with validation ids.")
-    parser.add_argument("--stage1_uri", help="Path readable by load_model.")
-    parser.add_argument("--scale_factor", type=float, help="Path readable by load_model.")
-    parser.add_argument("--batch_size", type=int, default=256, help="Training batch size.")
-    parser.add_argument("--n_epochs", type=int, default=25, help="Number of epochs to train.")
+    parser.add_argument("--run_dir", default="LDM", help="Location of model to resume.")
+    parser.add_argument("--dataset_path",default='datasets/iu_xray', help="Location of file with training ids.")
+    parser.add_argument("--config_file",default='configs/ldm/ldm_v0.yaml', help="Location of file with validation ids.")
+    parser.add_argument("--stage1_uri",default='mlruns/562843978384092940/efbdf48bf27242bc8bc9e8fc4301ce7c/artifacts/final_model', help="Path readable by load_model.")
+    parser.add_argument("--scale_factor", type=float, default=0.3, help="signal-to-noise ratio.")
+    parser.add_argument("--batch_size", type=int, default=8, help="Training batch size.")
+    parser.add_argument("--n_epochs", type=int, default=700, help="Number of epochs to train.")
     parser.add_argument("--eval_freq", type=int, default=10, help="Number of epochs to between evaluations.")
     parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
     parser.add_argument("--extended_report", type=int, default=1, help="Define if use extended reports")
-    parser.add_argument("--experiment", help="Mlflow experiment name.")
+    parser.add_argument("--experiment", default='AE_KL', help="Mlflow experiment name.")
 
     args = parser.parse_args()
     return args
@@ -83,11 +82,9 @@ def main(args):
     train_loader, val_loader = get_dataloader(
         cache_dir=cache_dir,
         batch_size=args.batch_size,
-        training_ids=args.training_ids,
-        validation_ids=args.validation_ids,
+        dataset_path=args.dataset_path,
         num_workers=args.num_workers,
-        model_type="diffusion",
-        extended_report=bool(args.extended_report),
+        model_type="diffusion"
     )
 
     # Load Autoencoder to produce the latent representations

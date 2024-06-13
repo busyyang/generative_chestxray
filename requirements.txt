@@ -1,11 +1,13 @@
 lpips==0.1.4
 pre-commit
-monai-weekly[nibabel, matplotlib, pandas, mlflow, tqdm, pillow]==1.2.dev2304
+monai
 tensorboardX
 omegaconf==2.3.0
 pynvml
 gdown
 x-transformers==1.8.1
 spacy
-transformers[torch]
+transformers
 torchxrayvision==1.0.1
+torch==1.13.1
+monai-generative
