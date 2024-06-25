@@ -5,47 +5,41 @@ Script to train a Latent Diffusion Model based on [Pinaya et al. "Brain imaging 
 ](https://github.com/Project-MONAI/GenerativeModels) package.
 
 
-## Instructions
-### Preprocessing
-After downloading the JPG images from [MIMIC-CXR-JPG](https://physionet.org/content/mimic-cxr-jpg/2.0.0/) and the
-associated free-text reports from [MIMIC-CXR Database](https://physionet.org/content/mimic-cxr/2.0.0/), you need to
-preprocess the data. The following is the list of execution for preprocessing:
+## 数据集
 
-1) `src/python/preprocessing/organise.py` - Resizes dataset to 512 pixels in the smaller dimension
-2) `src/python/preprocessing/create_ids.py` - Create files with datalist for training, validation and test using only "PA" views
-3) `src/python/preprocessing/create_section_files.py` - Create file with text sections for each report.
-4) `src/python/preprocessing/create_sentences_files.py` - Create file with sentences for each report.
+由于训练LDM模型需要数据有文本信息输入，在推理的时候用于conditional的生成，这里的数据采用C-arm的X光图像数据。对于标注了椎体名称的数据，对应的文本信息为：
+~~~
+'This is an X-ray image taken by a C-arm, covering {4} vertebrae, namely {L1, L2, L3, L4 and L5}.'
+~~~
+对应的椎体数量和椎体名称按实际情况替换。 对于仅标注了椎体但是较难识别椎体名称的数据，对应的文本信息为：
+~~~
+'This is an X-ray image taken by a C-arm. It includes {4} vertebrae, but the specific names of the vertebrae are unclear.'
+~~~
 
-### Training
-After preprocessing, you can train the model using similar commands as in the following files (note: This project was
-executed on a cluster with RunAI platform):
+图像与标注属于来源于`MaestroAlgoXrayImageDetection`项目的`00.datasets`目录，使用`src/preprocessing/create_carm_dataset.py`生成数据集。
+生成的数据集包含一个`images`文件夹和一个`annotation.json`文件。在运行`src/preprocessing/create_carm_dataset.py`之前检查相关路径是否正确/有效。
 
-1) `cluster/runai/training/stage1.sh` - Command to start to execute in the server the training the first stage of the model.
-The main python script in for this is the `src/python/training/train_aekl.py` script. The `--volume` flags indicate how the dataset
-is mounted in the Docker container.
-2) `src/python/training/eda_ldm_scaling_factor.py` - Script to find the best scaling factor for the latent diffusion model.
-3) `cluster/runai/training/ldm.sh` - Command to start to execute in the server the training the diffusion model on the latent representation.
-The main python script in for this is the `src/python/training/train_ldm.py` script. The `--volume` flags indicate how the dataset
-is mounted in the Docker container.
+由于3090服务器的`/home`文件夹空间有限，建议将数据放在`/datastore2`下（SSD），并设置软连接映射到`datasets`文件夹下，如：
+~~~
+ln -rs /datastore2/yangjie/XrayGenerationDataset ~/yangjie/repos/generative_chestxray/datasets/
+~~~
 
-These `.sh` files indicates which parameters and configuration file was used for training, as well how the host directories
-were mounted in the used Docker container.
+## 训练
 
-### Inference and evaluation
-Finally, we converted the mlflow model to .pth files (for easly loading in MONAI), sampled images from the diffusion
-model, and evaluated the model. The following is the list of execution for inference and evaluation:
+## 采样
 
-1) `src/python/testing/convert_mlflow_to_pytorch.py` - Convert mlflow model to .pth files
-2) `src/python/testing/sample_images.py` - Sample images from the diffusion model. `cluster/runai/testing/sampling_unconditioned.sh` shows
-how to execute this script in the server to generate the 1000 samples used in the following scripts.
-3) `src/python/testing/compute_msssim_reconstruction.py` - Measure the mean structural similarity index between images and
-reconstruction to measure the preformance of the first stage.
-4) `src/python/testing/compute_msssim_sample.py` - Measure the mean structural similarity index between test images and
-samples in order to measure the diversity of the synthetic data.
-5) `src/python/testing/compute_msssim_test_set.py` - Measure the mean structural similarity index between test images
-to measure the diversity of the reference test set.
-6) `src/python/testing/compute_fid.py` - Compute FID score between generated images and real images.
+## 性能分析
 
-## Released models
-- Version 0.1 - (Mar 9, 2023) Initial release
-- Version 0.2 - (Apr 9, 2023) Model with flipped images fixed.
+
+## 环境
+参考`requirements.txt`, 或：
+~~~
+conda activate monai
+~~~
+
+## Reference
+1. Step by Step搭建本仓代码：https://towardsdatascience.com/generating-medical-images-with-monai-e03310aa35e6
+2. 代码来源：https://github.com/Warvito/generative_chestxray
+3. https://zhuanlan.zhihu.com/p/618066889
+4. Bilibili上一个讲AIGC比较清楚的视频：https://www.bilibili.com/video/BV1tY4y1Z7eR
+5. https://huggingface.co/blog/annotated-diffusion
