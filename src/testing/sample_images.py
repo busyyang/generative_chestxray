@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument("--x_size", type=int, default=64, help="Latent space x size.")
     parser.add_argument("--y_size", type=int, default=64, help="Latent space y size.")
     parser.add_argument("--scale_factor", default=0.3, type=float, help="signal-to-noise ratio. Should be keep with training precess.")
-    parser.add_argument("--num_inference_steps", type=int, default=50, help="time steps for the diffusion model in DDIM.")
+    parser.add_argument("--num_inference_steps", type=int, default=100, help="time steps for the diffusion model in DDIM.")
 
     args = parser.parse_args()
     return args

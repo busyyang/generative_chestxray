@@ -23,14 +23,14 @@ def parse_args():
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--run_dir", default="AE_KL", help="Location of model to resume.")
-    parser.add_argument("--dataset_path", default='datasets/iu_xray', help="Location of dataset")
+    parser.add_argument("--dataset_path", default='datasets/XrayGenerationDataset', help="Location of dataset")
     parser.add_argument("--config_file",default='configs/stage1/aekl_v0.yaml', help="Location of file with validation ids.")
     parser.add_argument("--batch_size", type=int, default=8, help="Training batch size.")
     parser.add_argument("--n_epochs", type=int, default=30, help="Number of epochs to train.")
     parser.add_argument("--adv_start", type=int, default=25, help="Epoch when the adversarial training starts.")
     parser.add_argument("--eval_freq", type=int, default=10, help="Number of epochs to between evaluations.")
     parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
-    parser.add_argument("--experiment",default='AE_KL', help="Mlflow experiment name.")
+    parser.add_argument("--experiment",default='Carm', help="Mlflow experiment name.")
 
     args = parser.parse_args()
     return args
