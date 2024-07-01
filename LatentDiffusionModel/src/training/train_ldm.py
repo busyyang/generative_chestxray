@@ -25,15 +25,15 @@ def parse_args():
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--run_dir", default="LDM", help="Location of model to resume.")
-    parser.add_argument("--dataset_path",default='datasets/iu_xray', help="Location of training set.")
-    parser.add_argument("--config_file",default='configs/ldm/ldm_v0.yaml', help="Location of file with validation ids.")
-    parser.add_argument("--stage1_uri",default='mlruns/562843978384092940/efbdf48bf27242bc8bc9e8fc4301ce7c/artifacts/final_model', help="Path readable by load_model.")
+    parser.add_argument("--dataset_path",default='datasets/XrayGenerationDataset', help="Location of training set.")
+    parser.add_argument("--config_file",default='configs/ldm/ldm_v0.yaml', help="Location of ldm configuration file.")
+    parser.add_argument("--stage1_uri",default='mlruns/149355113917878320/d2ec6c4c9fc044c5851f0a59aee7026c/artifacts/final_model', help="Path readable by load_model.")
     parser.add_argument("--scale_factor", type=float, default=0.3, help="signal-to-noise ratio.")
-    parser.add_argument("--batch_size", type=int, default=8, help="Training batch size.")
-    parser.add_argument("--n_epochs", type=int, default=700, help="Number of epochs to train.")
+    parser.add_argument("--batch_size", type=int, default=16, help="Training batch size.")
+    parser.add_argument("--n_epochs", type=int, default=500, help="Number of epochs to train.")
     parser.add_argument("--eval_freq", type=int, default=10, help="Number of epochs to between evaluations.")
     parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
-    parser.add_argument("--extended_report", type=int, default=1, help="Define if use extended reports")
+    parser.add_argument("--extended_report", type=int, default=1, help="Define if use extended reports (only valid MIMIC-CXR dataset.)")
     parser.add_argument("--experiment", default='AE_KL', help="Mlflow experiment name.")
 
     args = parser.parse_args()
@@ -113,7 +113,7 @@ def main(args):
     text_encoder = text_encoder.to(device)
 
     optimizer = optim.AdamW(diffusion.parameters(), lr=config["ldm"]["base_lr"])
-
+    lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.n_epochs, eta_min=1e-7, last_epoch=-1, verbose=False)
     # Get Checkpoint
     best_loss = float("inf")
     start_epoch = 0
@@ -140,6 +140,7 @@ def main(args):
         train_loader=train_loader,
         val_loader=val_loader,
         optimizer=optimizer,
+        lr_scheduler=lr_scheduler,
         n_epochs=args.n_epochs,
         eval_freq=args.eval_freq,
         writer_train=writer_train,

@@ -338,6 +338,7 @@ def train_ldm(
     train_loader: torch.utils.data.DataLoader,
     val_loader: torch.utils.data.DataLoader,
     optimizer: torch.optim.Optimizer,
+    lr_scheduler: torch.optim.lr_scheduler,
     n_epochs: int,
     eval_freq: int,
     writer_train: SummaryWriter,
@@ -377,7 +378,7 @@ def train_ldm(
             scaler=scaler,
             scale_factor=scale_factor,
         )
-
+        lr_scheduler.step()
         if (epoch + 1) % eval_freq == 0:
             val_loss = eval_ldm(
                 model=model,
@@ -462,10 +463,10 @@ def train_epoch_ldm(
         scaler.step(optimizer)
         scaler.update()
 
-        writer.add_scalar("lr", get_lr(optimizer), epoch * len(loader) + step)
+        writer.add_scalar("lr", get_lr(optimizer), epoch)
 
         for k, v in losses.items():
-            writer.add_scalar(f"{k}", v.item(), epoch * len(loader) + step)
+            writer.add_scalar(f"{k}", v.item(), epoch)
 
         pbar.set_postfix({"epoch": epoch, "loss": f"{losses['loss'].item():.5f}", "lr": f"{get_lr(optimizer):.6f}"})
 

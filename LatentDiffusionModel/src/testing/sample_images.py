@@ -23,17 +23,17 @@ def parse_args():
 
     parser.add_argument("--output_dir", default='sampled_images/', help="Path to save sampled images.")
     parser.add_argument("--stage1_path",default='runs/AE_KL/final_model.pth',  help="Path to the .pth model from the stage1.")
-    parser.add_argument("--diffusion_path",default='runs/LDM/final_model.pth', help="Path to the .pth model from the diffusion model.")
+    parser.add_argument("--diffusion_path",default='runs/LDM/best_model.pth', help="Path to the .pth model from the diffusion model.")
     parser.add_argument("--stage1_config_file_path",default='configs/stage1/aekl_v0.yaml', help="Path to the .yaml for the stage1.")
     parser.add_argument("--diffusion_config_file_path", default='configs/ldm/ldm_v0.yaml', help="Path to the .yaml for the diffusion model.")
     parser.add_argument("--start_seed", default=1, type=int, help="random seed for the generation of the images.")
     parser.add_argument("--stop_seed", default=100, type=int, help="random seed for the generation of the images.")
-    parser.add_argument("--prompt", default='Cardiac and mediastinal contours are within normal limits', type=str, help="prompt text.")
+    parser.add_argument("--prompt", default='This is an X-ray image taken by a C-arm, covering 4 vertebrae, namely L1, L2, L3 and L4.', type=str, help="prompt text.")
     parser.add_argument("--guidance_scale", type=float, default=7.0, help="")
     parser.add_argument("--x_size", type=int, default=64, help="Latent space x size.")
     parser.add_argument("--y_size", type=int, default=64, help="Latent space y size.")
     parser.add_argument("--scale_factor", default=0.3, type=float, help="signal-to-noise ratio. Should be keep with training precess.")
-    parser.add_argument("--num_inference_steps", type=int, default=100, help="time steps for the diffusion model in DDIM.")
+    parser.add_argument("--num_inference_steps", type=int, default=500, help="time steps for the diffusion model in DDIM.")
 
     args = parser.parse_args()
     return args

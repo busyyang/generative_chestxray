@@ -1,7 +1,7 @@
 # Latent Diffusion Models for Chest X-Ray Generation using MONAI Generative Models
 
 Script to train a Latent Diffusion Model based on [Pinaya et al. "Brain imaging generation with latent diffusion models.
-"](https://arxiv.org/abs/2209.07162) on the MIMIC-CXR dataset using [MONAI Generative Models
+"](https://arxiv.org/abs/2209.07162) on the [IU_Xray dataset](https://drive.usercontent.google.com/download?id=1c0BXEuDy8Cmm2jfN0YYGkQxFZd2ZIoLg) and [C-arm dataset](MaestroAlgoXrayImageDetection/00.datasets) using [MONAI Generative Models
 ](https://github.com/Project-MONAI/GenerativeModels) package.
 
 
@@ -9,7 +9,7 @@ Script to train a Latent Diffusion Model based on [Pinaya et al. "Brain imaging 
 
 由于训练LDM模型需要数据有文本信息输入，在推理的时候用于conditional的生成，这里的数据采用C-arm的X光图像数据。对于标注了椎体名称的数据，对应的文本信息为：
 ~~~
-'This is an X-ray image taken by a C-arm, covering {4} vertebrae, namely {L1, L2, L3, L4 and L5}.'
+'This is an X-ray image taken by a C-arm, covering {5} vertebrae, namely {L1, L2, L3, L4 and L5}.'
 ~~~
 对应的椎体数量和椎体名称按实际情况替换。 对于仅标注了椎体但是较难识别椎体名称的数据，对应的文本信息为：
 ~~~
@@ -25,6 +25,19 @@ ln -rs /datastore2/yangjie/XrayGenerationDataset ~/yangjie/repos/generative_ches
 ~~~
 
 ## 训练
+
+ - AutoEncoder:
+
+训练过程分为两步，首先应该将AutoEncoder训练出来，这是通过一个高斯分布的噪声数据还原图像的部分。
+~~~bash
+python src/training/train_aekl.py --config_file configs/stage1/aekl_v0.yaml --dataset_path datasets/XrayGenerationDataset
+~~~
+
+ - Latent Diffusion Model
+在训练LDM的时候主要是训练如何从添加噪声后的图像中将噪声分离出来，需要使用到AutoEncoder部分训练的结果，需要通过`stage1_uri`进行配置。
+~~~bash
+python src/traning/train_ldm.py --config_file configs/ldm/ldm_v0.yaml  --dataset_path datasets/XrayGenerationDataset --stage1_uri mlruns/149355113917878320/d2ec6c4c9fc044c5851f0a59aee7026c/artifacts/final_model
+~~~
 
 ## 采样
 
