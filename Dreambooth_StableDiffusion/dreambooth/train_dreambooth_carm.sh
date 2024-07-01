@@ -1,0 +1,14 @@
+accelerate launch train_dreambooth.py \
+  --pretrained_model_name_or_path="runwayml/stable-diffusion-v1-5"  \
+  --instance_data_dir="carm_vertebrae" \
+  --output_dir="outputs" \
+  --instance_prompt="a x-ray image of carm_vertebrae" \
+  --resolution=512 \
+  --train_batch_size=1 \
+  --gradient_accumulation_steps=1 \
+  --learning_rate=5e-6 \
+  --lr_scheduler="constant" \
+  --lr_warmup_steps=0 \
+  --max_train_steps=500 \
+  --mixed_precision="fp16" \
+  --checkpointing_steps=50000
